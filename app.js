@@ -56,7 +56,12 @@ async function connectWallet() {
   staking = new ethers.Contract(STAKING_ADDRESS, STAKING_ABI, signer);
   const tokenAddr = await staking.stakeToken();
   token = new ethers.Contract(tokenAddr, ERC20_ABI, signer);
-  tokenDecimals = await token.decimals();
+  try {
+    tokenDecimals = Number(await token.decimals());
+  } catch (e) {
+    tokenDecimals = 18;
+    log("读取 decimals 失败，已回退为18");
+  }
 
   $("wallet").textContent = userAddress;
   await refreshNetwork();
@@ -102,17 +107,37 @@ async function switchToBscTestnet() {
 
 async function refreshMyData() {
   if (!signer || !staking || !token) throw new Error("请先连接钱包");
-  const [balance, allowance, count, pool] = await Promise.all([
-    token.balanceOf(userAddress),
-    token.allowance(userAddress, STAKING_ADDRESS),
-    staking.getStakesCount(userAddress),
-    staking.getContractTokenBalance()
-  ]);
+  try {
+    const balance = await token.balanceOf(userAddress);
+    $("linkBalance").textContent = formatAmount(balance);
+  } catch (e) {
+    $("linkBalance").textContent = "读取失败";
+    log(`读取LINK余额失败: ${e.message || e}`);
+  }
 
-  $("linkBalance").textContent = formatAmount(balance);
-  $("allowance").textContent = formatAmount(allowance);
-  $("myStakeCount").textContent = count.toString();
-  $("poolBalance").textContent = formatAmount(pool);
+  try {
+    const allowance = await token.allowance(userAddress, STAKING_ADDRESS);
+    $("allowance").textContent = formatAmount(allowance);
+  } catch (e) {
+    $("allowance").textContent = "读取失败";
+    log(`读取授权额度失败: ${e.message || e}`);
+  }
+
+  try {
+    const count = await staking.getStakesCount(userAddress);
+    $("myStakeCount").textContent = count.toString();
+  } catch (e) {
+    $("myStakeCount").textContent = "读取失败";
+    log(`读取Stake数量失败: ${e.message || e}`);
+  }
+
+  try {
+    const pool = await staking.getContractTokenBalance();
+    $("poolBalance").textContent = formatAmount(pool);
+  } catch (e) {
+    $("poolBalance").textContent = "读取失败";
+    log(`读取池子余额失败: ${e.message || e}`);
+  }
 }
 
 async function approve() {
