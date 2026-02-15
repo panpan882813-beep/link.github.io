@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VBK Staking - BSC Testnet</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <main class="container">
+    <h1>VBK Staking（BSC测试网）</h1>
+
+    <section class="card">
+      <div class="row">
+        <button id="connectBtn">连接钱包</button>
+        <button id="switchChainBtn">切换到BSC测试网</button>
+      </div>
+      <p>钱包: <span id="wallet">未连接</span></p>
+      <p>网络: <span id="network">未知</span></p>
+      <p>LINK余额: <span id="linkBalance">-</span></p>
+      <p>授权额度: <span id="allowance">-</span></p>
+    </section>
+
+    <section class="card">
+      <h2>质押</h2>
+      <label>质押数量（LINK）</label>
+      <input id="amount" type="number" min="0" step="100" placeholder="例如 500" />
+      <div class="row">
+        <button id="previewBtn">预览净额与收益</button>
+        <button id="approveBtn">授权</button>
+        <button id="depositBtn">直接质押</button>
+      </div>
+      <label>推荐人地址（首次绑定用）</label>
+      <input id="referrer" type="text" placeholder="0x..." />
+      <button id="depositWithRefBtn">带推荐人质押</button>
+
+      <div class="preview">
+        <p>有效: <span id="pvValid">-</span></p>
+        <p>手续费: <span id="pvFee">-</span></p>
+        <p>净入金: <span id="pvNet">-</span></p>
+        <p>周期(秒): <span id="pvDuration">-</span></p>
+        <p>总利率(BP): <span id="pvRate">-</span></p>
+        <p>预计利息: <span id="pvInterest">-</span></p>
+        <p>预计返还: <span id="pvPayout">-</span></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>提现与代理</h2>
+      <label>手动提现 stakeId</label>
+      <input id="withdrawStakeId" type="number" min="0" step="1" placeholder="例如 0" />
+      <button id="manualWithdrawBtn">manualWithdrawMatured</button>
+
+      <label>压单提现 oldStakeId</label>
+      <input id="pressOldId" type="number" min="0" step="1" placeholder="例如 0" />
+      <label>新质押数量（LINK）</label>
+      <input id="pressNewAmount" type="number" min="0" step="100" placeholder="例如 500" />
+      <button id="pressWithdrawBtn">withdrawWithPressStake</button>
+
+      <button id="claimAgentBtn">领取代理奖励</button>
+    </section>
+
+    <section class="card">
+      <h2>查询</h2>
+      <div class="row">
+        <button id="refreshMyBtn">刷新我的数据</button>
+      </div>
+      <p>我的总Stake数: <span id="myStakeCount">-</span></p>
+      <p>合约池余额(LINK): <span id="poolBalance">-</span></p>
+      <label>查询 stakeId</label>
+      <input id="queryStakeId" type="number" min="0" step="1" placeholder="例如 0" />
+      <button id="queryStakeBtn">查询单笔Stake</button>
+      <pre id="stakeDetail">-</pre>
+    </section>
+
+    <section class="card">
+      <h2>日志</h2>
+      <pre id="log"></pre>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
