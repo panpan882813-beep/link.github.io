@@ -28,12 +28,104 @@ let staking;
 let token;
 let tokenDecimals = 18;
 
+const CUSTOM_ERROR_MESSAGES = {
+  MinDeposit: "质押金额低于最小限制（当前最小 500 LINK）",
+  InvalidMultiple: "质押金额必须是 100 LINK 的整数倍",
+  AmountExceedsMax: "质押金额超过单笔上限",
+  MaxStakesExceeded: "该地址已达到最大质押笔数",
+  ActiveStakeNotMatured: "当前有未到期有效质押，暂不可再次质押",
+  CannotReferSelf: "不能绑定自己为推荐人",
+  ReferrerMustHaveStake: "推荐人必须有有效质押",
+  ReferrerRequired: "非首位用户必须绑定推荐人",
+  CircularReference: "推荐关系存在循环，绑定失败",
+  AlreadyInDownline: "该关系已在下级网络中，不能重复绑定",
+  ContractAddressNotAllowed: "仅允许普通钱包地址参与（合约地址被禁止）",
+  ReferrerContractNotAllowed: "推荐人不能是合约地址",
+  NotAuthorized: "当前地址无权限执行该操作",
+  InvalidStakeId: "stakeId 无效",
+  StakeNotActive: "该质押单不是有效状态",
+  StakeNotMatured: "该质押单尚未到期",
+  CannotWithdrawLastStake: "最后一笔有效质押不可直接提取",
+  InsufficientRestake: "新质押金额不足，无法满足压单条件",
+  InsufficientPoolBalance: "合约池余额不足，暂无法发放",
+  NoPendingRewards: "当前没有可领取的代理奖励",
+  TokenTransferFromFailed: "代币扣款失败（请检查授权额度和余额）",
+  TokenTransferFailed: "代币转账失败",
+  FeeWallet3MustBeBlackhole: "fee3 地址必须是黑洞地址"
+};
+
+const CUSTOM_ERROR_SELECTORS = Object.fromEntries(
+  Object.keys(CUSTOM_ERROR_MESSAGES).map((name) => [
+    ethers.utils.id(`${name}()`).slice(0, 10).toLowerCase(),
+    name
+  ])
+);
+
 const $ = (id) => document.getElementById(id);
 
 function log(message) {
   const target = $("log");
   const now = new Date().toLocaleTimeString();
   target.textContent = `[${now}] ${message}\n` + target.textContent;
+}
+
+function toast(type, message) {
+  const container = $("toastContainer");
+  if (!container) return;
+  const node = document.createElement("div");
+  node.className = `toast ${type}`;
+  node.textContent = message;
+  container.appendChild(node);
+  setTimeout(() => {
+    node.remove();
+  }, 2600);
+}
+
+function extractErrorData(errorObj) {
+  if (!errorObj) return "";
+  if (typeof errorObj.data === "string" && errorObj.data.startsWith("0x")) return errorObj.data;
+  if (errorObj.error) {
+    const nested = extractErrorData(errorObj.error);
+    if (nested) return nested;
+  }
+  if (errorObj.receipt && typeof errorObj.receipt.revertString === "string") {
+    return errorObj.receipt.revertString;
+  }
+  return "";
+}
+
+function decodeCustomError(errorObj) {
+  const rawData = extractErrorData(errorObj);
+  const text = String(errorObj?.message || errorObj || "");
+
+  let selector = "";
+  if (rawData && rawData.startsWith("0x") && rawData.length >= 10) {
+    selector = rawData.slice(0, 10).toLowerCase();
+  } else {
+    const match = text.match(/0x[0-9a-fA-F]{8}/);
+    if (match) selector = match[0].toLowerCase();
+  }
+
+  if (!selector) return null;
+  const errorName = CUSTOM_ERROR_SELECTORS[selector];
+  if (!errorName) return null;
+  return {
+    errorName,
+    message: CUSTOM_ERROR_MESSAGES[errorName]
+  };
+}
+
+function formatActionError(actionLabel, errorObj) {
+  if (errorObj?.code === 4001) {
+    return `${actionLabel}已取消（用户拒绝签名）`;
+  }
+
+  const decoded = decodeCustomError(errorObj);
+  if (decoded) {
+    return `${actionLabel}失败：${decoded.message} (${decoded.errorName})`;
+  }
+
+  return `${actionLabel}失败：${errorObj?.message || errorObj}`;
 }
 
 function parseAmount(input) {
@@ -146,6 +238,7 @@ async function approve() {
   log(`授权已发送: ${tx.hash}`);
   await tx.wait();
   log("授权成功");
+  toast("success", "授权成功");
   await refreshMyData();
 }
 
@@ -155,6 +248,7 @@ async function deposit() {
   log(`质押交易已发送: ${tx.hash}`);
   await tx.wait();
   log("质押成功");
+  toast("success", "质押成功");
   await refreshMyData();
 }
 
@@ -166,6 +260,7 @@ async function depositWithReferrer() {
   log(`带推荐质押已发送: ${tx.hash}`);
   await tx.wait();
   log("带推荐质押成功");
+  toast("success", "质押成功（已绑定推荐关系）");
   await refreshMyData();
 }
 
@@ -188,6 +283,7 @@ async function manualWithdraw() {
   log(`手动提现已发送: ${tx.hash}`);
   await tx.wait();
   log("手动提现成功");
+  toast("success", "手动提现成功");
   await refreshMyData();
 }
 
@@ -199,6 +295,7 @@ async function pressWithdraw() {
   log(`压单提现已发送: ${tx.hash}`);
   await tx.wait();
   log("压单提现成功");
+  toast("success", "压单提现成功");
   await refreshMyData();
 }
 
@@ -207,6 +304,7 @@ async function claimAgent() {
   log(`领取代理奖励已发送: ${tx.hash}`);
   await tx.wait();
   log("领取代理奖励成功");
+  toast("success", "领取代理奖励成功");
   await refreshMyData();
 }
 
@@ -225,22 +323,24 @@ async function queryStake() {
   }, null, 2);
 }
 
-async function run(action) {
+async function run(actionLabel, action) {
   try {
     await action();
   } catch (e) {
-    log(`失败: ${e.message || e}`);
+    const msg = formatActionError(actionLabel, e);
+    log(msg);
+    toast("error", msg);
   }
 }
 
-$("connectBtn").onclick = () => run(connectWallet);
-$("switchChainBtn").onclick = () => run(switchToBscTestnet);
-$("refreshMyBtn").onclick = () => run(refreshMyData);
-$("approveBtn").onclick = () => run(approve);
-$("depositBtn").onclick = () => run(deposit);
-$("depositWithRefBtn").onclick = () => run(depositWithReferrer);
-$("previewBtn").onclick = () => run(preview);
-$("manualWithdrawBtn").onclick = () => run(manualWithdraw);
-$("pressWithdrawBtn").onclick = () => run(pressWithdraw);
-$("claimAgentBtn").onclick = () => run(claimAgent);
-$("queryStakeBtn").onclick = () => run(queryStake);
+$("connectBtn").onclick = () => run("连接钱包", connectWallet);
+$("switchChainBtn").onclick = () => run("切换网络", switchToBscTestnet);
+$("refreshMyBtn").onclick = () => run("刷新数据", refreshMyData);
+$("approveBtn").onclick = () => run("授权", approve);
+$("depositBtn").onclick = () => run("直接质押", deposit);
+$("depositWithRefBtn").onclick = () => run("带推荐质押", depositWithReferrer);
+$("previewBtn").onclick = () => run("预览收益", preview);
+$("manualWithdrawBtn").onclick = () => run("手动提现", manualWithdraw);
+$("pressWithdrawBtn").onclick = () => run("压单提现", pressWithdraw);
+$("claimAgentBtn").onclick = () => run("领取代理奖励", claimAgent);
+$("queryStakeBtn").onclick = () => run("查询质押", queryStake);
