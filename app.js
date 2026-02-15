@@ -5,6 +5,8 @@ const STAKING_ABI = [
   "function stakeToken() view returns (address)",
   "function deposit(uint256 amount)",
   "function depositWithReferrer(uint256 amount, address referrerAddr)",
+  "function getReferrer(address user) view returns (address)",
+  "function firstUser() view returns (address)",
   "function previewNetAndInterest(uint256 grossAmount) view returns (bool valid,uint256 totalFee,uint256 netAmount,uint256 duration,uint256 totalRateBP,uint256 interestAmount,uint256 payoutAmount)",
   "function getStakesCount(address user) view returns (uint256)",
   "function getStake(address user,uint256 stakeId) view returns (tuple(uint256 amount,uint256 startTs,uint256 duration,bool withdrawn,bool active,uint256 rateBP,uint256 interestAmount))",
@@ -244,6 +246,29 @@ async function approve() {
 
 async function deposit() {
   const amount = parseAmount($("amount").value);
+
+  const [myReferrer, firstUserAddr, allowance, balance] = await Promise.all([
+    staking.getReferrer(userAddress),
+    staking.firstUser(),
+    token.allowance(userAddress, STAKING_ADDRESS),
+    token.balanceOf(userAddress)
+  ]);
+
+  if (balance.lt(amount)) {
+    throw new Error("余额不足，请先确保钱包有足够 LINK");
+  }
+
+  if (allowance.lt(amount)) {
+    throw new Error("授权额度不足，请先点击授权");
+  }
+
+  const zero = ethers.constants.AddressZero;
+  const isFirstUser = userAddress.toLowerCase() === String(firstUserAddr).toLowerCase();
+  const hasReferrer = String(myReferrer).toLowerCase() !== zero.toLowerCase();
+  if (!isFirstUser && !hasReferrer) {
+    throw new Error("你尚未绑定推荐人，请使用“带推荐人质押”完成首次绑定");
+  }
+
   const tx = await staking.deposit(amount);
   log(`质押交易已发送: ${tx.hash}`);
   await tx.wait();
@@ -344,4 +369,3 @@ $("manualWithdrawBtn").onclick = () => run("手动提现", manualWithdraw);
 $("pressWithdrawBtn").onclick = () => run("压单提现", pressWithdraw);
 $("claimAgentBtn").onclick = () => run("领取代理奖励", claimAgent);
 $("queryStakeBtn").onclick = () => run("查询质押", queryStake);
-
