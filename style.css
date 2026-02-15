@@ -71,3 +71,34 @@ pre {
 .preview p {
   margin: 4px 0;
 }
+
+.toast-container {
+  position: fixed;
+  right: 14px;
+  top: 14px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  min-width: 220px;
+  max-width: 360px;
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.toast.success {
+  background: #123a28;
+  border-color: #2e8a62;
+  color: #d8ffea;
+}
+
+.toast.error {
+  background: #3d1b1b;
+  border-color: #a54a4a;
+  color: #ffdede;
+}
