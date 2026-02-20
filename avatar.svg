@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Link avatar">
+  <defs>
+    <radialGradient id="g" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#7aa6ff"/>
+      <stop offset="55%" stop-color="#3b5cd6"/>
+      <stop offset="100%" stop-color="#233c8d"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="120" fill="url(#g)" stroke="#6a7dd8" stroke-width="6"/>
+  <text x="128" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="96" font-weight="700" fill="#ffffff">L</text>
+</svg>

@@ -1,24 +1,52 @@
 body {
   margin: 0;
-  background: radial-gradient(circle at top, #131b36 0%, #0b1020 50%, #090d1a 100%);
-  color: #ecf1ff;
-  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #161616 0%, #0c0c0c 55%, #090909 100%);
+  color: #f5efe6;
+  font-family: "Space Grotesk", Arial, sans-serif;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: -10% -10% -10% -10%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+body::before {
+  background:
+    radial-gradient(680px 420px at 12% 8%, rgba(212, 168, 82, 0.25), transparent 60%),
+    radial-gradient(520px 360px at 85% 12%, rgba(196, 140, 56, 0.18), transparent 60%),
+    radial-gradient(720px 520px at 30% 88%, rgba(110, 80, 30, 0.2), transparent 65%);
+  filter: blur(0.5px);
+}
+
+body::after {
+  background-image:
+    radial-gradient(rgba(222, 182, 98, 0.16) 1px, transparent 1px),
+    linear-gradient(120deg, rgba(120, 90, 30, 0.18), rgba(20, 18, 10, 0.12));
+  background-size: 28px 28px, auto;
+  opacity: 0.55;
+  mask-image: radial-gradient(circle at 50% 30%, #000 40%, transparent 75%);
 }
 
 .container {
   max-width: 1020px;
-  margin: 24px auto;
-  padding: 0 16px 28px;
+  margin: 22px auto 40px;
+  padding: 0 16px 36px;
   box-sizing: border-box;
 }
 
 .card {
-  background: linear-gradient(180deg, #161f3d 0%, #121a33 100%);
-  border: 1px solid #313e71;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  background: linear-gradient(180deg, rgba(22, 18, 12, 0.9) 0%, rgba(16, 14, 10, 0.95) 100%);
+  border: 1px solid rgba(180, 130, 50, 0.35);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 214, 137, 0.08);
 }
 
 h1, h2 {
@@ -28,22 +56,89 @@ h1, h2 {
 h1 {
   margin-bottom: 6px;
   font-size: 30px;
+  font-family: "Cinzel", "Space Grotesk", serif;
+  letter-spacing: 0.5px;
 }
 
 h2 {
   font-size: 20px;
   margin-bottom: 12px;
+  font-family: "Cinzel", "Space Grotesk", serif;
+  letter-spacing: 0.4px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px 18px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-title {
+  font-family: "Cinzel", "Space Grotesk", serif;
+  font-size: 20px;
+  letter-spacing: 0.6px;
+}
+
+.brand-sub {
+  color: #c9b79b;
+  font-size: 12px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .hero {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 10px;
+}
+
+.hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hero-title h1 {
+  margin: 0 0 4px;
+}
+
+.hero-pill {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(214, 166, 74, 0.5);
+  background: linear-gradient(180deg, rgba(40, 28, 12, 0.9) 0%, rgba(26, 20, 12, 0.95) 100%);
+  color: #e9d6aa;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: inline-block;
+  object-fit: cover;
+  border: 1px solid rgba(214, 166, 74, 0.8);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(214, 166, 74, 0.25);
 }
 
 .sub {
   margin: 0;
-  color: #aebcff;
+  color: #c9b79b;
   font-size: 14px;
 }
 
@@ -70,7 +165,7 @@ label {
   margin-top: 10px;
   margin-bottom: 6px;
   font-size: 13px;
-  color: #b5c1f7;
+  color: #cdb88f;
 }
 
 input {
@@ -78,37 +173,52 @@ input {
   box-sizing: border-box;
   padding: 10px;
   border-radius: 8px;
-  border: 1px solid #3c4a84;
-  background: #0f1530;
-  color: #f0f4ff;
+  border: 1px solid rgba(150, 110, 40, 0.6);
+  background: rgba(16, 13, 8, 0.9);
+  color: #f7f1e3;
 }
 
 input:focus {
   outline: none;
-  border-color: #6f89f5;
-  box-shadow: 0 0 0 2px rgba(111, 137, 245, 0.18);
+  border-color: rgba(214, 166, 74, 0.9);
+  box-shadow: 0 0 0 2px rgba(214, 166, 74, 0.2);
 }
 
-button {
-  border: 1px solid #5e76d6;
-  background: linear-gradient(180deg, #31499a 0%, #243b82 100%);
-  color: #fff;
-  border-radius: 8px;
-  padding: 10px 12px;
+.btn {
+  border: 1px solid rgba(214, 166, 74, 0.6);
+  background: linear-gradient(180deg, rgba(60, 45, 20, 0.9) 0%, rgba(40, 30, 16, 0.95) 100%);
+  color: #f6e7c5;
+  border-radius: 10px;
+  padding: 10px 14px;
   cursor: pointer;
-  min-height: 40px;
+  min-height: 42px;
   font-weight: 600;
+  letter-spacing: 0.2px;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-button:hover {
-  background: linear-gradient(180deg, #3a55b1 0%, #2a438f 100%);
+.btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(240, 200, 110, 0.9);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, #c99a44 0%, #a5782a 100%);
+  color: #1a1206;
+  border-color: rgba(255, 214, 137, 0.9);
+}
+
+.btn.ghost {
+  background: rgba(20, 16, 10, 0.6);
+  color: #f1e1be;
 }
 
 pre {
   white-space: pre-wrap;
   word-break: break-all;
-  background: #0f1530;
-  border: 1px solid #2f3a69;
+  background: rgba(16, 13, 8, 0.9);
+  border: 1px solid rgba(150, 110, 40, 0.5);
   border-radius: 8px;
   padding: 10px;
 }
@@ -118,7 +228,7 @@ pre {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px dashed #2d3764;
+  border-bottom: 1px dashed rgba(150, 110, 40, 0.5);
   padding-bottom: 4px;
 }
 
@@ -133,12 +243,14 @@ pre {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: #b7c2f1;
+  color: #cdb88f;
 }
 
 .kv-grid span {
   color: #ffffff;
   font-weight: 600;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .toast-container {
@@ -161,18 +273,32 @@ pre {
 }
 
 .toast.success {
-  background: #123a28;
+  background: rgba(25, 40, 25, 0.95);
   border-color: #2e8a62;
   color: #d8ffea;
 }
 
 .toast.error {
-  background: #3d1b1b;
+  background: rgba(45, 20, 20, 0.95);
   border-color: #a54a4a;
   color: #ffdede;
 }
 
 @media (max-width: 768px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .avatar {
+    width: 46px;
+    height: 46px;
+  }
   .container {
     margin: 12px auto;
     padding: 0 10px 16px;
@@ -207,7 +333,8 @@ pre {
   }
 
   input,
-  button {
+  button,
+  .btn {
     font-size: 16px;
   }
 
