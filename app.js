@@ -1,5 +1,5 @@
 const BSC_MAINNET_CHAIN_ID = 56;
-const STAKING_ADDRESS = "0x055b7298b52b2ceb60512bea909b8dc665be5729";
+const STAKING_ADDRESS = "0xe8E53645313BaFb25C7eF9EDe92965c2bF564971";
 const EXPECTED_TOKEN_ADDRESS = "0xCA18ff41e63539E67AcE684e90e36d04Dcf74E72";
 
 const I18N = {
@@ -98,7 +98,23 @@ const I18N = {
     disconnectAction: "Disconnect",
     amountPlaceholder: "e.g. 1",
     stakeIdPlaceholder: "e.g. 0",
-    addressPlaceholder: "0x..."
+    addressPlaceholder: "0x...",
+    teamTitle: "My Team",
+    agentLevelLabel: "Agent Level",
+    teamCountLabel: "Team Members",
+    pendingRewardsLabel: "Pending Rewards",
+    agentStatusLabel: "Agent Status",
+    downlineCountLabel: "Downline Agents",
+    refreshTeamBtn: "Refresh Team Data",
+    agentLevelNone: "None",
+    agentLevel1: "L1",
+    agentLevel2: "L2",
+    agentLevel3: "L3",
+    agentLevel4: "L4",
+    agentLevel5: "L5",
+    agentStatusActive: "Active",
+    agentStatusInactive: "Inactive",
+    noAgentData: "No agent data available"
   },
   zh: {
     langToggle: "English",
@@ -195,7 +211,23 @@ const I18N = {
     disconnectAction: "断开连接",
     amountPlaceholder: "例如 1",
     stakeIdPlaceholder: "例如 0",
-    addressPlaceholder: "0x..."
+    addressPlaceholder: "0x...",
+    teamTitle: "我的团队",
+    agentLevelLabel: "代理等级",
+    teamCountLabel: "团队成员",
+    pendingRewardsLabel: "待领取奖励",
+    agentStatusLabel: "代理状态",
+    downlineCountLabel: "下线代理",
+    refreshTeamBtn: "刷新团队数据",
+    agentLevelNone: "无",
+    agentLevel1: "L1",
+    agentLevel2: "L2",
+    agentLevel3: "L3",
+    agentLevel4: "L4",
+    agentLevel5: "L5",
+    agentStatusActive: "活跃",
+    agentStatusInactive: "非活跃",
+    noAgentData: "暂无代理数据"
   }
 };
 
@@ -211,7 +243,10 @@ const STAKING_ABI = [
   "function getContractTokenBalance() view returns (uint256)",
   "function manualWithdrawMatured(uint256 stakeId)",
   "function withdrawWithPressStake(uint256 oldStakeId,uint256 newStakeGrossAmount)",
-  "function claimAgentRewards()"
+  "function claimAgentRewards()",
+  "function getAgentInfo(address agent) view returns (tuple(uint8 level,uint256 teamValidCount,uint256 totalRewards,uint256 pendingRewards,uint256 lastClaimTime,uint256 performance,bool isActive,bool manualL12NoCheck,uint256 registeredAt))",
+  "function getDownlineAgents(address agent) view returns (address[])",
+  "function getTeamCount(address agent) view returns (uint256)"
 ];
 
 const ERC20_ABI = [
@@ -367,10 +402,20 @@ function applyLanguage() {
   setText("queryStakeBtn", "queryStakeBtn");
   setText("logTitle", "logTitle");
 
-  const langBtn = $("langToggleBtn");
+  // Team section
+  setText("teamTitle", "teamTitle");
+  setText("agentLevelLabel", "agentLevelLabel");
+  setText("teamCountLabel", "teamCountLabel");
+  setText("pendingRewardsLabel", "pendingRewardsLabel");
+  setText("agentStatusLabel", "agentStatusLabel");
+  setText("downlineCountLabel", "downlineCountLabel");
+  const refreshTeamBtn = $ ("refreshTeamBtn");
+  if (refreshTeamBtn) refreshTeamBtn.textContent = t("refreshTeamBtn");
+
+  const langBtn = $ ("langToggleBtn");
   if (langBtn) langBtn.textContent = t("langToggle");
 
-  const switchBtn = $("switchChainBtn");
+  const switchBtn = $ ("switchChainBtn");
   if (switchBtn) switchBtn.textContent = t("switchNetwork");
 
   setConnectedUI(isConnected);
@@ -416,6 +461,16 @@ function resetUI() {
     const el = $(id);
     if (el) el.textContent = "-";
   }
+
+  // Team info
+  const teamIds = ["agentLevel", "teamCount", "pendingRewards", "agentStatus", "downlineCount"];
+  for (const id of teamIds) {
+    const el = $(id);
+    if (el) el.textContent = "-";
+  }
+
+  const teamDetail = $("teamDetail");
+  if (teamDetail) teamDetail.textContent = "-";
 }
 
 function disconnectWallet() {
@@ -707,26 +762,93 @@ async function refreshMyData() {
   if (!signer || !staking || !token) throw new Error("Please connect your wallet first");
   try {
     const balance = await token.balanceOf(userAddress);
-    $("linkBalance").textContent = formatAmount(balance);
+    $ ("linkBalance").textContent = formatAmount(balance);
   } catch (e) {
-    $("linkBalance").textContent = t("readFailed");
+    $ ("linkBalance").textContent = t("readFailed");
     log(`Failed to read LINK balance: ${e.message || e}`);
   }
 
   try {
     const allowance = await token.allowance(userAddress, STAKING_ADDRESS);
-    $("allowance").textContent = formatAmount(allowance);
+    $ ("allowance").textContent = formatAmount(allowance);
   } catch (e) {
-    $("allowance").textContent = t("readFailed");
+    $ ("allowance").textContent = t("readFailed");
     log(`Failed to read allowance: ${e.message || e}`);
   }
 
   try {
     const count = await staking.getStakesCount(userAddress);
-    $("myStakeCount").textContent = count.toString();
+    $ ("myStakeCount").textContent = count.toString();
   } catch (e) {
-    $("myStakeCount").textContent = t("readFailed");
+    $ ("myStakeCount").textContent = t("readFailed");
     log(`Failed to read stake count: ${e.message || e}`);
+  }
+
+  // Also refresh team data
+  if (isConnected) {
+    await refreshTeamData();
+  }
+}
+
+async function refreshTeamData() {
+  if (!signer || !staking) throw new Error("Please connect your wallet first");
+  try {
+    const agentInfo = await staking.getAgentInfo(userAddress);
+    const teamCount = await staking.getTeamCount(userAddress);
+    const downlineAgents = await staking.getDownlineAgents(userAddress);
+
+    // Update agent level
+    const levelMap = {
+      0: t("agentLevelNone"),
+      1: t("agentLevel1"),
+      2: t("agentLevel2"),
+      3: t("agentLevel3"),
+      4: t("agentLevel4"),
+      5: t("agentLevel5")
+    };
+    const levelEl = $ ("agentLevel");
+    if (levelEl) levelEl.textContent = levelMap[agentInfo[0]] || t("agentLevelNone");
+
+    // Update team count
+    const teamCountEl = $ ("teamCount");
+    if (teamCountEl) teamCountEl.textContent = teamCount.toString();
+
+    // Update pending rewards
+    const pendingEl = $ ("pendingRewards");
+    if (pendingEl) pendingEl.textContent = formatAmount(agentInfo[3]);
+
+    // Update agent status
+    const statusEl = $ ("agentStatus");
+    if (statusEl) statusEl.textContent = agentInfo[6] ? t("agentStatusActive") : t("agentStatusInactive");
+
+    // Update downline count
+    const downlineEl = $ ("downlineCount");
+    if (downlineEl) downlineEl.textContent = downlineAgents.length.toString();
+
+    // Update team detail
+    const detailEl = $ ("teamDetail");
+    if (detailEl) {
+      const detail = {
+        level: levelMap[agentInfo[0]] || t("agentLevelNone"),
+        teamCount: teamCount.toString(),
+        pendingRewards: formatAmount(agentInfo[3]),
+        totalRewards: formatAmount(agentInfo[2]),
+        status: agentInfo[6] ? t("agentStatusActive") : t("agentStatusInactive"),
+        downlineCount: downlineAgents.length.toString(),
+        performance: formatAmount(agentInfo[5])
+      };
+      detailEl.textContent = JSON.stringify(detail, null, 2);
+    }
+
+  } catch (e) {
+    log(`Failed to read team data: ${e.message || e}`);
+    const teamIds = ["agentLevel", "teamCount", "pendingRewards", "agentStatus", "downlineCount"];
+    for (const id of teamIds) {
+      const el = $(id);
+      if (el) el.textContent = t("noAgentData");
+    }
+    const teamDetail = $ ("teamDetail");
+    if (teamDetail) teamDetail.textContent = t("noAgentData");
   }
 }
 
@@ -825,7 +947,7 @@ async function preview() {
   const pvValid = $("pvValid");
   if (pvValid) pvValid.textContent = String(result.valid);
 
-  const base99 = amount.mul(9900).div(10000);
+  const base99 = result.netAmount;
   const pvBase = $("pvBase");
   if (pvBase) pvBase.textContent = formatAmount(base99);
 
@@ -922,12 +1044,10 @@ $("manualWithdrawBtn").onclick = () => run(t("manualWithdrawAction"), manualWith
 $("pressWithdrawBtn").onclick = () => run(t("pressWithdrawAction"), pressWithdraw);
 $("claimAgentBtn").onclick = () => run(t("claimAgentAction"), claimAgent);
 $("queryStakeBtn").onclick = () => run(t("queryStakeAction"), queryStake);
-$("langToggleBtn").onclick = () => toggleLanguage();
+$ ("langToggleBtn").onclick = () => toggleLanguage();
+  $ ("refreshTeamBtn").onclick = () => run(t("refreshTeamBtn"), refreshTeamData);
 
 // Initialize
 applyLanguage();
 setConnectedUI(false);
 resetUI();
-
-
-
