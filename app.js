@@ -5,7 +5,7 @@ const EXPECTED_TOKEN_ADDRESS = "0xCA18ff41e63539E67AcE684e90e36d04Dcf74E72";
 const I18N = {
   en: {
     langToggle: "中文",
-    brandTitle: "Link Alliance",
+    brandTitle: "Link Paladin Protocol",
     brandSub: "Alliance of Links · BSC Mainnet",
     heroTitle: "On-Chain Staking Hub",
     heroSub: "Efficient staking · Agent rewards · Cross-chain synergy",
@@ -118,7 +118,7 @@ const I18N = {
   },
   zh: {
     langToggle: "English",
-    brandTitle: "Link全链协议",
+    brandTitle: "Link圣骑协议",
     brandSub: "Alliance of Links · BSC 主网",
     heroTitle: "链上质押中心",
     heroSub: "高效质押 · 代理激励 · 全链协同",
@@ -1051,5 +1051,6 @@ $ ("langToggleBtn").onclick = () => toggleLanguage();
 applyLanguage();
 setConnectedUI(false);
 resetUI();
+
 
 
